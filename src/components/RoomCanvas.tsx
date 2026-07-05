@@ -61,6 +61,9 @@ export function RoomCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const minimapRef = useRef<HTMLDivElement>(null);
+  // Pointer position (screen) at drag start. framer's info.offset is reported in the element's
+  // rotated local frame, so for rotated blocks we derive the true screen delta from info.point instead.
+  const dragStartPoint = useRef<{ x: number; y: number } | null>(null);
 
   const [selectionBox, setSelectionBox] = useState<{ startX: number, startY: number, endX: number, endY: number } | null>(null);
   const [rulerPoints, setRulerPoints] = useState<{ startX: number, startY: number, endX: number, endY: number } | null>(null);
@@ -309,19 +312,20 @@ export function RoomCanvas({
 
   // Resize handle for a single selected resizable item. Rendered as a sibling OUTSIDE the draggable
   // motion.div (framer uses native pointer listeners, so a handle inside the block can't stop a drag
-  // from starting). Positioned at the block's rotated bottom-right corner.
+  // from starting). Positioned at the block's visible bounding-box bottom-right corner.
   const selResizing = resizePreview?.id === selectedItem?.instanceId;
   const showResize = !!selectedItem && !!selectedTemplate?.isResizable && !isRulerActive && !dragging;
   let resizeHandle: { left: number; top: number } | null = null;
   if (showResize && selectedItem && selectedTemplate) {
     const sw = selResizing ? resizePreview!.w : (selectedItem.overrideWidth || selectedTemplate.widthInches) * PX_PER_INCH;
     const sh = selResizing ? resizePreview!.h : (selectedItem.overrideHeight || selectedTemplate.heightInches) * PX_PER_INCH;
-    const rad = ((selectedItem.rotation || 0) * Math.PI) / 180;
-    const cx = selectedItem.x + sw / 2;
-    const cy = selectedItem.y + sh / 2;
-    const rx = (sw / 2) * Math.cos(rad) - (sh / 2) * Math.sin(rad);
-    const ry = (sw / 2) * Math.sin(rad) + (sh / 2) * Math.cos(rad);
-    resizeHandle = { left: (cx + rx) * zoom, top: (cy + ry) * zoom };
+    const rotS = (((selectedItem.rotation || 0) % 360) + 360) % 360;
+    const rotatedS = rotS === 90 || rotS === 270;
+    const ewS = rotatedS ? sh : sw;
+    const ehS = rotatedS ? sw : sh;
+    const aabbLeft = selectedItem.x + (sw - ewS) / 2;
+    const aabbTop = selectedItem.y + (sh - ehS) / 2;
+    resizeHandle = { left: (aabbLeft + ewS) * zoom, top: (aabbTop + ehS) * zoom };
   }
 
   return (
@@ -431,11 +435,18 @@ export function RoomCanvas({
               const isCircle = template.pattern === 'zone-circle';
               const isHashed = template.pattern === 'hashed';
 
-              // Rendered room available to the (counter-rotated, horizontal) label.
+              // Rotations are 90° steps, so a rotated block is just its footprint with width/height
+              // swapped. Render it at those effective dims WITHOUT a CSS rotate — framer-motion drags a
+              // rotated element in its rotated local frame, which makes it jump on drop. Position the
+              // (unrotated) element at the footprint's bounding-box top-left instead.
               const rot = (((item.rotation || 0) % 360) + 360) % 360;
               const rotated = rot === 90 || rot === 270;
-              const rW = (rotated ? h : w) * zoom;
-              const rH = (rotated ? w : h) * zoom;
+              const ew = rotated ? h : w;
+              const eh = rotated ? w : h;
+              const offX = (w - ew) / 2;
+              const offY = (h - eh) / 2;
+              const rW = ew * zoom;
+              const rH = eh * zoom;
               const showName = rW >= 40 && rH >= 22;
               const showDims = showDimensions && rW >= 58 && rH >= 40;
               const smallFont = rW < 82;
@@ -452,13 +463,9 @@ export function RoomCanvas({
                   drag={!isRulerActive && !isResizing}
                   dragMomentum={false}
                   dragConstraints={containerRef}
-                  onDragStart={() => setDragging(true)}
-                  animate={{ x: item.x * zoom, y: item.y * zoom, rotate: item.rotation }}
-                  transition={{
-                    rotate: { type: 'spring', bounce: 0, duration: 0.3 },
-                    x: { duration: 0 },
-                    y: { duration: 0 }
-                  }}
+                  onDragStart={(_e, info) => { setDragging(true); dragStartPoint.current = { x: info.point.x, y: info.point.y }; }}
+                  animate={{ x: (item.x + offX) * zoom, y: (item.y + offY) * zoom }}
+                  transition={{ x: { duration: 0 }, y: { duration: 0 } }}
                   initial={false}
                   onPointerDown={(e) => {
                     e.stopPropagation();
@@ -477,8 +484,11 @@ export function RoomCanvas({
                   onDragEnd={(e, info) => {
                     setDragging(false);
                     const snapPx = settings.snapToGrid ? settings.snapSizeInches * PX_PER_INCH : null;
-                    const dx = info.offset.x / zoom;
-                    const dy = info.offset.y / zoom;
+                    // True screen delta from the pointer (rotation-independent), not framer's local-frame offset.
+                    const sp = dragStartPoint.current;
+                    const dx = (sp ? info.point.x - sp.x : info.offset.x) / zoom;
+                    const dy = (sp ? info.point.y - sp.y : info.offset.y) / zoom;
+                    dragStartPoint.current = null;
 
                     if (isSelected && selectedIds.length > 1) {
                       let draggedX = item.x + dx;
@@ -498,15 +508,17 @@ export function RoomCanvas({
                       let newX = item.x + dx;
                       let newY = item.y + dy;
                       if (snapPx) {
-                        newX = Math.round(newX / snapPx) * snapPx;
-                        newY = Math.round(newY / snapPx) * snapPx;
+                        // Snap the block's VISIBLE bounding-box top-left to the grid (offX/offY account
+                        // for a rotated footprint), not the invisible unrotated corner.
+                        newX = Math.round((newX + offX) / snapPx) * snapPx - offX;
+                        newY = Math.round((newY + offY) / snapPx) * snapPx - offY;
                       }
                       onUpdateItem(item.instanceId, { x: newX, y: newY });
                     }
                   }}
                   style={{
-                    width: w * zoom,
-                    height: h * zoom,
+                    width: ew * zoom,
+                    height: eh * zoom,
                     backgroundColor: isZone ? hexToRgba(template.color, 0.14) : (template.pattern ? 'transparent' : template.color),
                     backgroundImage: isHashed ? `repeating-linear-gradient(45deg, ${template.color}, ${template.color} 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px)` : 'none',
                     top: 0,
@@ -524,10 +536,7 @@ export function RoomCanvas({
 
                   {/* Inline label: name over a "W × L" caption, sized to the block; hidden when the block is tiny. */}
                   {showName && (
-                    <div
-                      className="relative z-10 flex flex-col items-center justify-center gap-0.5 pointer-events-none px-1.5 max-w-full"
-                      style={{ transform: `rotate(${-item.rotation}deg)` }}
-                    >
+                    <div className="relative z-10 flex flex-col items-center justify-center gap-0.5 pointer-events-none px-1.5 max-w-full">
                       <span className={`max-w-full font-semibold leading-tight tracking-tight text-center break-words rounded px-1.5 py-0.5 ${smallFont ? 'text-[8px]' : 'text-[10px]'} ${isZone ? 'text-sky-900 bg-white/70' : 'text-white bg-slate-900/70'}`}>
                         {item.label || template.name}
                       </span>

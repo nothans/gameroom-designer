@@ -61,6 +61,34 @@ test('removes the selected block from the floating menu', async ({ page }) => {
   await expect(page.getByText('Your room is empty')).toBeVisible();
 });
 
+test('dragging a rotated block moves it accurately (no jump)', async ({ page }) => {
+  await addItem(page, /Pinball \(Stern\)/);
+  const item = items(page).first();
+  // Move to the middle first so wall-clamping doesn't confound the measurement.
+  const b = await item.boundingBox();
+  await page.mouse.move(b!.x + b!.width / 2, b!.y + b!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(900, 460, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(150);
+
+  await page.getByRole('button', { name: /Rotate \+90/ }).click();
+  await page.waitForTimeout(400);
+
+  const b0 = await item.boundingBox();
+  const gx = b0!.x + b0!.width / 2, gy = b0!.y + b0!.height / 2;
+  await page.mouse.move(gx, gy);
+  await page.mouse.down();
+  await page.mouse.move(gx + 80, gy + 60, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(200);
+
+  const b1 = await item.boundingBox();
+  // It follows the cursor (~80,60), not a wild jump.
+  expect(Math.abs((b1!.x - b0!.x) - 80)).toBeLessThan(20);
+  expect(Math.abs((b1!.y - b0!.y) - 60)).toBeLessThan(20);
+});
+
 test('the rectangular clearance block renders as a dashed zone', async ({ page }) => {
   await page.getByPlaceholder('Search items…').fill('rect');
   await page.getByRole('button', { name: /Clearance \(Rect\)/ }).click();
