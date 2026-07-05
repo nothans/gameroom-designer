@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/banner.png" alt="Gameroom Designer — lay out your arcade to scale" width="100%">
+</p>
+
 # Gameroom Designer
 
 A 2D room layout planner for arranging things to scale. Set your room's real dimensions,
@@ -6,6 +10,12 @@ decor), slide them around until it works, and export the plan as a PNG.
 
 Everything runs in the browser. Your layout is saved to `localStorage`, so there's no account,
 no server, and nothing leaves your machine.
+
+**[Try it live →](https://nothans.github.io/gameroom-designer/)**
+
+<p align="center">
+  <img src="docs/screenshot.png" alt="A game room laid out to scale in Gameroom Designer" width="100%">
+</p>
 
 ## Features
 
