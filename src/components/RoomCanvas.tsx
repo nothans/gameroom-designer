@@ -43,6 +43,52 @@ const hexToRgba = (hex: string, a: number) => {
   return `rgba(${r},${g},${b},${a})`;
 };
 
+// Architectural symbols for doors and windows, drawn as strokes on a transparent block.
+// Swing doors rotate their whole symbol (square footprint); openings/windows draw along the long axis.
+function StructuralSymbol({ pattern, color, rotation, wide }: { pattern: string; color: string; rotation: number; wide: boolean }) {
+  if (pattern === 'door-left' || pattern === 'door-right') {
+    const mirror = pattern === 'door-right' ? 'translate(100,0) scale(-1,1)' : '';
+    return (
+      <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none" viewBox="0 0 100 100">
+        <g transform={`rotate(${rotation} 50 50)`}>
+          <g transform={mirror}>
+            <line x1="4" y1="97" x2="97" y2="97" stroke={color} strokeWidth="3" strokeLinecap="round" opacity="0.5" />
+            <line x1="5" y1="97" x2="5" y2="6" stroke={color} strokeWidth="6" strokeLinecap="round" />
+            <path d="M 5 6 A 92 92 0 0 1 97 97" fill="none" stroke={color} strokeWidth="2.5" strokeDasharray="5 4" opacity="0.85" />
+          </g>
+        </g>
+      </svg>
+    );
+  }
+  if (pattern === 'door-plain') {
+    return wide ? (
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 40" preserveAspectRatio="none">
+        <line x1="5" y1="4" x2="5" y2="36" stroke={color} strokeWidth="6" strokeLinecap="round" />
+        <line x1="95" y1="4" x2="95" y2="36" stroke={color} strokeWidth="6" strokeLinecap="round" />
+        <line x1="7" y1="20" x2="93" y2="20" stroke={color} strokeWidth="3" strokeDasharray="6 5" opacity="0.7" />
+      </svg>
+    ) : (
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 40 100" preserveAspectRatio="none">
+        <line x1="4" y1="5" x2="36" y2="5" stroke={color} strokeWidth="6" strokeLinecap="round" />
+        <line x1="4" y1="95" x2="36" y2="95" stroke={color} strokeWidth="6" strokeLinecap="round" />
+        <line x1="20" y1="7" x2="20" y2="93" stroke={color} strokeWidth="3" strokeDasharray="6 5" opacity="0.7" />
+      </svg>
+    );
+  }
+  // window
+  return wide ? (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 40" preserveAspectRatio="none">
+      <rect x="2" y="7" width="96" height="26" fill={hexToRgba(color, 0.14)} stroke={color} strokeWidth="3" />
+      <line x1="2" y1="20" x2="98" y2="20" stroke={color} strokeWidth="2.5" />
+    </svg>
+  ) : (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 40 100" preserveAspectRatio="none">
+      <rect x="7" y="2" width="26" height="96" fill={hexToRgba(color, 0.14)} stroke={color} strokeWidth="3" />
+      <line x1="20" y1="2" x2="20" y2="98" stroke={color} strokeWidth="2.5" />
+    </svg>
+  );
+}
+
 export function RoomCanvas({
   items,
   templates,
@@ -434,6 +480,8 @@ export function RoomCanvas({
               const isZone = template.pattern === 'zone' || template.pattern === 'zone-circle';
               const isCircle = template.pattern === 'zone-circle';
               const isHashed = template.pattern === 'hashed';
+              const isSymbol = template.pattern === 'door-left' || template.pattern === 'door-right'
+                || template.pattern === 'door-plain' || template.pattern === 'window';
 
               // Rotations are 90° steps, so a rotated block is just its footprint with width/height
               // swapped. Render it at those effective dims WITHOUT a CSS rotate — framer-motion drags a
@@ -455,7 +503,7 @@ export function RoomCanvas({
               return (
                 <motion.div
                   key={item.instanceId}
-                  className={`room-item group absolute flex flex-col items-center justify-center ${isCircle ? 'rounded-full' : 'rounded-sm'} select-none ${isZone ? '' : 'shadow-md'} ${
+                  className={`room-item group absolute flex flex-col items-center justify-center ${isCircle ? 'rounded-full' : 'rounded-sm'} select-none ${isZone || isSymbol ? '' : 'shadow-md'} ${
                     isSelected
                       ? 'ring-2 ring-blue-500 ring-offset-2 z-10'
                       : 'hover:ring-2 hover:ring-ink/15 z-0'
@@ -534,8 +582,13 @@ export function RoomCanvas({
                     />
                   )}
 
+                  {/* Door / window architectural symbol. */}
+                  {isSymbol && (
+                    <StructuralSymbol pattern={template.pattern!} color={template.color} rotation={item.rotation || 0} wide={ew >= eh} />
+                  )}
+
                   {/* Inline label: name over a "W × L" caption, sized to the block; hidden when the block is tiny. */}
-                  {showName && (
+                  {showName && !isSymbol && (
                     <div className="relative z-10 flex flex-col items-center justify-center gap-0.5 pointer-events-none px-1.5 max-w-full">
                       <span className={`max-w-full font-semibold leading-tight tracking-tight text-center break-words rounded px-1.5 py-0.5 ${smallFont ? 'text-[8px]' : 'text-[10px]'} ${isZone ? 'text-sky-900 bg-white/70' : 'text-white bg-slate-900/70'}`}>
                         {item.label || template.name}
@@ -548,8 +601,8 @@ export function RoomCanvas({
                     </div>
                   )}
 
-                  {/* Tiny block: reveal the name as a floating chip on hover or when selected. */}
-                  {tiny && (
+                  {/* Tiny block or a door/window symbol: reveal the name as a floating chip on hover or when selected. */}
+                  {(tiny || isSymbol) && (
                     <div
                       className={`absolute left-1/2 bottom-full mb-1 -translate-x-1/2 z-30 pointer-events-none ${isSelected ? 'block' : 'hidden group-hover:block'}`}
                     >

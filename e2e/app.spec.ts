@@ -96,6 +96,17 @@ test('the rectangular clearance block renders as a dashed zone', async ({ page }
   await expect(items(page).last().locator('.border-dashed').first()).toBeVisible();
 });
 
+test('doors and windows render as structural symbols', async ({ page }) => {
+  await page.getByPlaceholder('Search items…').fill('door');
+  await page.getByRole('button', { name: /Door \(Swing L\)/ }).click();
+  await expect(items(page)).toHaveCount(1);
+  await expect(items(page).first().locator('svg')).toBeVisible();
+  await page.getByPlaceholder('Search items…').fill('window');
+  await page.getByRole('button', { name: /^Window/ }).click();
+  await expect(items(page)).toHaveCount(2);
+  await expect(items(page).last().locator('svg')).toBeVisible();
+});
+
 test('the circular clearance block renders as a round dashed zone', async ({ page }) => {
   await page.getByPlaceholder('Search items…').fill('circle');
   await page.getByRole('button', { name: /Clearance \(Circle\)/ }).click();

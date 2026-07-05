@@ -59,4 +59,10 @@ export const templates: FurnitureTemplate[] = [
   // Round clearance — radial room around a dartboard throw line, a round poker table, a turning circle.
   // Resize both sides for a circle, or unevenly for an ellipse.
   { id: 'standing-area-circle', name: 'Clearance (Circle)', widthInches: 60, heightInches: 60, color: '#0ea5e9', category: 'structural', isResizable: true, pattern: 'zone-circle' },
+  // Doors & windows — architectural symbols. A swing door's square footprint is the door + its swing
+  // clearance (a 36" door needs a 36" radius kept clear). Rotate to face the door into the room.
+  { id: 'door-left', name: 'Door (Swing L)', widthInches: 36, heightInches: 36, color: '#475569', category: 'structural', pattern: 'door-left' },
+  { id: 'door-right', name: 'Door (Swing R)', widthInches: 36, heightInches: 36, color: '#475569', category: 'structural', pattern: 'door-right' },
+  { id: 'door-plain', name: 'Door (Opening)', widthInches: 36, heightInches: 8, color: '#475569', category: 'structural', pattern: 'door-plain' },
+  { id: 'window', name: 'Window', widthInches: 40, heightInches: 6, color: '#0ea5e9', category: 'structural', isResizable: true, pattern: 'window' },
 ];

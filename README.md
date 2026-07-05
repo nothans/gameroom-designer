@@ -14,8 +14,8 @@ no server, and nothing leaves your machine.
   auto-place into the first open spot (no pile-up).
 - **Real-world catalog**: pinball (Stern, JJP, Atari, and generic widebodies), arcade cabinets
   (upright, cocktail, cabaret, sit-down racer), game tables (pool, air hockey, foosball, ping pong,
-  shuffleboard, poker), plus furniture, storage, decor, and resizable structural bump-outs. Every
-  item is sized in real inches.
+  shuffleboard, poker), plus furniture, storage, decor, and structural pieces (walls, doors with swing
+  arcs, windows). Every item is sized in real inches.
 - **Clearance zones**: drop a resizable dashed *Clearance* area (rectangular or circular) to reserve the
   room people need: cue clearance around a pool table, pull-back room in front of a cabinet, a dartboard throw
   circle, walking lanes.
