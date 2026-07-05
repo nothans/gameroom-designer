@@ -1,0 +1,18 @@
+{
+  "app": "gameroom-designer",
+  "version": 1,
+  "name": "Pinball Row",
+  "description": "A tight 12 × 20 ft pinball room: five machines along one wall with a standing/clearance zone for play.",
+  "roomWidthFt": 12,
+  "roomLengthFt": 20,
+  "settings": { "snapToGrid": true, "snapSizeInches": 6, "unitSystem": "imperial", "showDimensions": true, "showGrid": true },
+  "templates": [],
+  "items": [
+    { "instanceId": "ex2-p1", "templateId": "pinball", "x": 24, "y": 30, "rotation": 0 },
+    { "instanceId": "ex2-p2", "templateId": "pinball", "x": 110, "y": 30, "rotation": 0 },
+    { "instanceId": "ex2-p3", "templateId": "pinball", "x": 196, "y": 30, "rotation": 0 },
+    { "instanceId": "ex2-p4", "templateId": "pinball", "x": 282, "y": 30, "rotation": 0 },
+    { "instanceId": "ex2-p5", "templateId": "pinball", "x": 368, "y": 30, "rotation": 0 },
+    { "instanceId": "ex2-clear", "templateId": "standing-area", "x": 24, "y": 230, "rotation": 0, "overrideWidth": 130, "overrideHeight": 42 }
+  ]
+}

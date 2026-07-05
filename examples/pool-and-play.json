@@ -1,0 +1,19 @@
+{
+  "app": "gameroom-designer",
+  "version": 1,
+  "name": "Pool & Play",
+  "description": "A 20 × 24 ft room built around an 8 ft pool table with cue clearance, plus air hockey and a lounge.",
+  "roomWidthFt": 20,
+  "roomLengthFt": 24,
+  "settings": { "snapToGrid": false, "snapSizeInches": 12, "unitSystem": "imperial", "showDimensions": true, "showGrid": true },
+  "templates": [],
+  "items": [
+    { "instanceId": "ex3-clear", "templateId": "standing-area", "x": 120, "y": 90, "rotation": 0, "overrideWidth": 174, "overrideHeight": 220 },
+    { "instanceId": "ex3-pool", "templateId": "pool-table", "x": 213, "y": 156, "rotation": 0 },
+    { "instanceId": "ex3-air", "templateId": "air-hockey", "x": 420, "y": 120, "rotation": 90 },
+    { "instanceId": "ex3-sofa", "templateId": "sofa", "x": 90, "y": 690, "rotation": 0 },
+    { "instanceId": "ex3-arm", "templateId": "armchair", "x": 330, "y": 700, "rotation": 0 },
+    { "instanceId": "ex3-plant", "templateId": "plant", "x": 620, "y": 700, "rotation": 0 },
+    { "instanceId": "ex3-bar", "templateId": "home-bar", "x": 480, "y": 640, "rotation": 0 }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "app": "gameroom-designer",
+  "version": 1,
+  "name": "Basement Arcade",
+  "description": "A 16 × 24 ft basement with a row of pinball, an upright, air hockey, and a lounge corner.",
+  "roomWidthFt": 16,
+  "roomLengthFt": 24,
+  "settings": { "snapToGrid": true, "snapSizeInches": 6, "unitSystem": "imperial", "showDimensions": true, "showGrid": true },
+  "templates": [],
+  "items": [
+    { "instanceId": "ex1-pin1", "templateId": "pinball", "x": 36, "y": 36, "rotation": 0 },
+    { "instanceId": "ex1-pin2", "templateId": "pinball-jjp", "x": 138, "y": 36, "rotation": 0 },
+    { "instanceId": "ex1-pin3", "templateId": "pinball-atari", "x": 240, "y": 36, "rotation": 0 },
+    { "instanceId": "ex1-arc1", "templateId": "arcade-classic", "x": 372, "y": 36, "rotation": 0 },
+    { "instanceId": "ex1-air", "templateId": "air-hockey", "x": 150, "y": 330, "rotation": 0 },
+    { "instanceId": "ex1-sofa", "templateId": "sofa", "x": 60, "y": 660, "rotation": 0 },
+    { "instanceId": "ex1-stool1", "templateId": "stool", "x": 330, "y": 620, "rotation": 0 },
+    { "instanceId": "ex1-stool2", "templateId": "stool", "x": 390, "y": 620, "rotation": 0 },
+    { "instanceId": "ex1-bar", "templateId": "home-bar", "x": 330, "y": 690, "rotation": 0 }
+  ]
+}
