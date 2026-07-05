@@ -213,6 +213,23 @@ test('clears all saved data after confirmation', async ({ page }) => {
   await expect(page.locator('input[type="number"]').first()).toHaveValue('16'); // back to default room
 });
 
+test('resizing the window re-fits the canvas without disrupting block positions', async ({ page }) => {
+  await addItem(page, /Pinball \(Stern\)/);
+  const read = () => page.evaluate(() => {
+    const room = document.getElementById('room-canvas-container')!.getBoundingClientRect();
+    const s = JSON.parse(localStorage.getItem('roomPlanner_historyState') || '{}');
+    const it = (s.history?.[s.index] || [])[0] || {};
+    return { roomW: Math.round(room.width), x: it.x, y: it.y };
+  });
+  const before = await read();
+  await page.setViewportSize({ width: 760, height: 560 });
+  await page.waitForTimeout(400);
+  const after = await read();
+  expect(after.roomW).toBeLessThan(before.roomW); // canvas shrank to fit the smaller window
+  expect(after.x).toBe(before.x);                  // block position data is untouched
+  expect(after.y).toBe(before.y);
+});
+
 test('zoom controls change the zoom level', async ({ page }) => {
   const pct = page.locator('button[title="Reset to 100%"]');
   const before = await pct.textContent();

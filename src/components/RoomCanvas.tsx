@@ -110,6 +110,11 @@ export function RoomCanvas({
   // Pointer position (screen) at drag start. framer's info.offset is reported in the element's
   // rotated local frame, so for rotated blocks we derive the true screen delta from info.point instead.
   const dragStartPoint = useRef<{ x: number; y: number } | null>(null);
+  // Room point (base px) currently under the viewport center — used to keep the view steady on resize.
+  const viewCenterRef = useRef<{ x: number; y: number } | null>(null);
+  // Whether the view is showing the whole room (fit). If so, resize re-fits; if the user zoomed in, resize
+  // instead keeps the same room point centered. (Starts true — the canvas fits on mount.)
+  const atFitRef = useRef(true);
 
   const [selectionBox, setSelectionBox] = useState<{ startX: number, startY: number, endX: number, endY: number } | null>(null);
   const [rulerPoints, setRulerPoints] = useState<{ startX: number, startY: number, endX: number, endY: number } | null>(null);
@@ -158,6 +163,7 @@ export function RoomCanvas({
     const vy = clamp((sr.top - cr.top) / lz, 0, baseH);
     const vw = clamp(s.clientWidth / lz, 0, baseW - vx);
     const vh = clamp(s.clientHeight / lz, 0, baseH - vy);
+    viewCenterRef.current = { x: vx + vw / 2, y: vy + vh / 2 };
     setView({ x: vx, y: vy, w: vw, h: vh });
   }, [baseW, baseH]);
 
@@ -165,6 +171,7 @@ export function RoomCanvas({
   const zoomToClientPoint = useCallback((next: number, clientX: number, clientY: number) => {
     const cont = containerRef.current, s = scrollRef.current;
     const z = clamp(next, ZOOM_MIN, ZOOM_MAX);
+    atFitRef.current = false; // any explicit zoom (buttons, wheel, reset) leaves "fit" mode
     if (!cont || !s) { setZoom(z); return; }
     const oldRect = cont.getBoundingClientRect();
     const lz = oldRect.width / baseW || 1;
@@ -204,6 +211,7 @@ export function RoomCanvas({
     if (!s) return;
     const pad = 56;
     const z = clamp(Math.min((s.clientWidth - pad) / baseW, (s.clientHeight - pad) / baseH), ZOOM_MIN, ZOOM_MAX);
+    atFitRef.current = true;
     setZoom(z);
     requestAnimationFrame(() => {
       centerOnBase(baseW / 2, baseH / 2);
@@ -231,13 +239,31 @@ export function RoomCanvas({
     return () => s.removeEventListener('wheel', onWheel);
   }, [zoom, zoomToClientPoint]);
 
-  // Keep the minimap viewport rect in sync with the container size.
+  // On canvas resize, keep the view steady: if the whole room was visible, re-fit to the new size
+  // (so shrinking the window shrinks the canvas); otherwise keep the same room point centered. Either
+  // way block positions relative to the room are untouched — only the view is adjusted.
   useEffect(() => {
     updateView();
-    const ro = new ResizeObserver(() => updateView());
+    let first = true;
+    const ro = new ResizeObserver(() => {
+      if (first) { first = false; return; } // skip the initial observe callback
+      const s = scrollRef.current;
+      if (!s) return;
+      const center = viewCenterRef.current;
+      if (atFitRef.current) {
+        const pad = 56;
+        const fitZoom = clamp(Math.min((s.clientWidth - pad) / baseW, (s.clientHeight - pad) / baseH), ZOOM_MIN, ZOOM_MAX);
+        setZoom(fitZoom);
+        requestAnimationFrame(() => centerOnBase(baseW / 2, baseH / 2));
+      } else if (center) {
+        requestAnimationFrame(() => centerOnBase(center.x, center.y));
+      } else {
+        updateView();
+      }
+    });
     if (scrollRef.current) ro.observe(scrollRef.current);
     return () => ro.disconnect();
-  }, [updateView, zoom, roomWidthFt, roomLengthFt]);
+  }, [updateView, roomWidthFt, roomLengthFt, baseW, baseH, centerOnBase]);
 
   // --- Selection / ruler pointer handling (room base px) -----------------------
   const handlePointerDown = (e: React.PointerEvent) => {
