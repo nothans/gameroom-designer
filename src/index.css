@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/* Gameroom Designer — arcade identity.
+   Tinted slate neutrals (never pure white/black) + a single amber accent.
+   Blue is reserved for the selection ring so it stays distinct from item colors. */
+@theme {
+  --color-ground: #e9ebf0;        /* app background behind panels + canvas */
+  --color-panel: #f6f7f9;         /* panel surfaces (Library, Properties, toolbar) */
+  --color-paneledge: #eceef2;     /* panel headers / footers */
+  --color-paper: #fcfcfb;         /* the room "sheet" */
+  --color-ink: #1c1e26;           /* primary text (hued near-black) */
+  --color-ink-soft: #475569;      /* secondary text */
+  --color-muted: #64748b;         /* tertiary labels (AA on panels) */
+  --color-line: #d9dde3;          /* hairline borders */
+  --color-arcade: #f59e0b;        /* accent */
+  --color-arcade-strong: #d97706; /* accent hover/active */
+  --color-arcade-tint: #fdf1dd;   /* accent wash for active states */
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-ground);
+  color: var(--color-ink);
+}
